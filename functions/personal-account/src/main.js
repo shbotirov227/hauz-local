@@ -70,8 +70,8 @@ export default async (context) => {
       return context.res.json(error.toBody(), error.status)
     }
 
-    // Log the detail, return none: an Appwrite error body can carry secrets.
-    context.error(error instanceof Error ? (error.stack ?? error.message) : String(error))
+    // SDK errors can include credentials in their details, so log no raw error.
+    context.error('Unexpected Personal Account Function failure.')
 
     return context.res.json(
       { error: 'internal_error', message: 'Unexpected failure.' },
