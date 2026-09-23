@@ -6,16 +6,16 @@ import { routeTree } from './routeTree.gen'
 
 // Cache defaults for server data. Override per query where a route wants
 // something different.
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 60_000,
-      retry: 1,
-    },
-  },
-})
-
 export function getRouter() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 60_000,
+        retry: 1,
+      },
+    },
+  })
+
   const router = createTanStackRouter({
     routeTree,
     context: { queryClient },

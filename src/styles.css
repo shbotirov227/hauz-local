@@ -1,19 +1,47 @@
-/* Deliberately minimal. Styling is not part of this task. */
-
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
   font-family: system-ui, sans-serif;
   line-height: 1.5;
+  color: #202124;
+  background: #f7f7f5;
 }
 
 body {
   margin: 0;
-  padding: 1.5rem;
-  max-width: 44rem;
+}
+
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 3.5rem;
+  padding: 0 1.5rem;
+  border-bottom: 1px solid #d8d8d4;
+  background: #fff;
+}
+
+.site-header nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.brand {
+  color: #174c3c;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+main,
+.header-error {
+  width: min(100% - 3rem, 44rem);
+  margin: 2rem auto;
 }
 
 h1 {
   font-size: 1.5rem;
+  letter-spacing: 0;
 }
 
 label {
@@ -35,4 +63,82 @@ button {
   margin-top: 1rem;
   padding: 0.4rem 0.9rem;
   font: inherit;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+.link-button {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: #174c3c;
+  background: transparent;
+  text-decoration: underline;
+}
+
+.secondary-actions,
+.form-actions,
+.page-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.page-heading {
+  justify-content: space-between;
+}
+
+.page-heading button {
+  margin: 0;
+}
+
+.error-summary,
+.header-error {
+  padding: 0.75rem 1rem;
+  border-left: 3px solid #a52a2a;
+  background: #fff0f0;
+}
+
+.error-summary p {
+  margin: 0;
+}
+
+.profile-details dt {
+  margin-top: 1rem;
+  color: #565a58;
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+
+.profile-details dd {
+  margin-left: 0;
+}
+
+.profile-bio {
+  white-space: pre-wrap;
+}
+
+@media (max-width: 32rem) {
+  .site-header {
+    padding: 0 1rem;
+  }
+
+  main,
+  .header-error {
+    width: min(100% - 2rem, 44rem);
+  }
+
+  .page-heading,
+  .form-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .page-heading button,
+  .form-actions button {
+    width: 100%;
+  }
 }
