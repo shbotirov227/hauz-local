@@ -1,3 +1,5 @@
+import { CircleAlert } from 'lucide-react'
+
 import type { AuthError } from '../lib/auth/types'
 
 export function AuthFeedback({ error }: { error: AuthError | null }) {
@@ -7,7 +9,9 @@ export function AuthFeedback({ error }: { error: AuthError | null }) {
 
   return (
     <div className="error-summary" role="alert">
-      <p>{error.message}</p>
+      <CircleAlert aria-hidden="true" size={20} />
+      <div>
+        <p>{error.message}</p>
       {error.issues?.length ? (
         <ul>
           {error.issues.map((issue, index) => (
@@ -15,6 +19,7 @@ export function AuthFeedback({ error }: { error: AuthError | null }) {
           ))}
         </ul>
       ) : null}
+      </div>
     </div>
   )
 }

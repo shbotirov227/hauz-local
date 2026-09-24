@@ -7,8 +7,10 @@ import {
   createRootRouteWithContext,
   useRouter,
 } from '@tanstack/react-router'
+import { Building2, LogIn, LogOut, UserRound } from 'lucide-react'
 import { useRef, useState } from 'react'
 
+import { Button, buttonVariants } from '../components/ui/button'
 import { logout, getCurrentAuth } from '../lib/auth/actions'
 import type { AuthError } from '../lib/auth/types'
 import appCss from '../styles.css?url'
@@ -29,12 +31,14 @@ export const Route = createRootRouteWithContext<RouterContext>()({
   }),
   component: RootLayout,
   shellComponent: RootDocument,
+  notFoundComponent: () => <NotFound />,
 })
 
 function RootLayout() {
   const { auth } = Route.useRouteContext()
   const router = useRouter()
   const submitting = useRef(false)
+  const [loggingOut, setLoggingOut] = useState(false)
   const [logoutError, setLogoutError] = useState<AuthError | null>(null)
 
   const signedInLabel =
@@ -52,6 +56,7 @@ function RootLayout() {
     }
 
     submitting.current = true
+    setLoggingOut(true)
     setLogoutError(null)
     try {
       const result = await logout({ data: {} })
@@ -70,38 +75,55 @@ function RootLayout() {
       })
     } finally {
       submitting.current = false
+      setLoggingOut(false)
     }
   }
 
   return (
     <>
       <header className="site-header">
-        <Link className="brand" to="/">
-          HAUZ
-        </Link>
-        <nav aria-label="Account">
+        <div className="header-inner">
+          <Link className="brand" to="/">
+            <span className="brand-mark" aria-hidden="true">
+              <Building2 size={19} />
+            </span>
+            HAUZ
+          </Link>
+        <nav aria-label="Account" className="account-nav">
           {signedInLabel ? (
             <>
               {auth.status === 'signed_in' ? (
-                <Link to="/profile">{signedInLabel}</Link>
+                <Link className="account-link" to="/profile">
+                  <UserRound aria-hidden="true" size={17} />
+                  <span>{signedInLabel}</span>
+                </Link>
               ) : (
-                <span>{signedInLabel}</span>
+                <span className="account-label">{signedInLabel}</span>
               )}
-              <button
-                className="link-button"
-                disabled={submitting.current}
+              <Button
+                aria-label="Log out"
+                disabled={loggingOut}
                 onClick={handleLogout}
+                size="compact"
                 type="button"
+                variant="ghost"
               >
+                <LogOut aria-hidden="true" size={17} />
                 Log out
-              </button>
+              </Button>
             </>
           ) : (
-            <Link to="/sign-in" search={{ redirect: '/' }}>
+            <Link
+              className={buttonVariants({ size: 'compact', variant: 'secondary' })}
+              to="/sign-in"
+              search={{ redirect: '/' }}
+            >
+              <LogIn aria-hidden="true" size={17} />
               Sign in
             </Link>
           )}
         </nav>
+        </div>
       </header>
       {logoutError ? (
         <p className="header-error" role="alert">
@@ -124,5 +146,18 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <Scripts />
       </body>
     </html>
+  )
+}
+
+function NotFound() {
+  return (
+    <main className="empty-page">
+      <p className="error-code">404</p>
+      <h1>Page not found</h1>
+      <p>The page you requested does not exist.</p>
+      <Link className={buttonVariants({ variant: 'primary' })} to="/">
+        Go home
+      </Link>
+    </main>
   )
 }

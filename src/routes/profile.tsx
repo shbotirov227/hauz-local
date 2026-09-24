@@ -1,8 +1,22 @@
 import { createFileRoute, redirect, useRouter } from '@tanstack/react-router'
+import {
+  AtSign,
+  BriefcaseBusiness,
+  FileText,
+  LoaderCircle,
+  Pencil,
+  RotateCcw,
+  Save,
+  UserRound,
+} from 'lucide-react'
 import { useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 
 import { AuthFeedback } from '../components/auth-feedback'
+import { Button } from '../components/ui/button'
+import { Field } from '../components/ui/field'
+import { Input } from '../components/ui/input'
+import { Textarea } from '../components/ui/textarea'
 import { updatePersonalAccount } from '../lib/auth/actions'
 import { normalizeReturnPath } from '../lib/auth/redirect'
 import type { AuthError, PersonalAccount } from '../lib/auth/types'
@@ -35,12 +49,18 @@ function Profile() {
 
   if (auth.status === 'error') {
     return (
-      <main>
-        <h1>Profile</h1>
+      <main className="page-shell">
+        <div className="page-header">
+          <div>
+            <p className="eyebrow">Personal account</p>
+            <h1>Profile</h1>
+          </div>
+        </div>
         <AuthFeedback error={auth.error} />
-        <button onClick={() => router.invalidate()} type="button">
+        <Button onClick={() => router.invalidate()} type="button">
+          <RotateCcw aria-hidden="true" size={18} />
           Retry
-        </button>
+        </Button>
       </main>
     )
   }
@@ -118,82 +138,87 @@ function ProfileDetails({ account }: { account: PersonalAccount }) {
   }
 
   if (!editing) {
+    const initials = `${account.firstName[0] ?? ''}${account.lastName[0] ?? ''}`
+
     return (
-      <main>
-        <div className="page-heading">
-          <h1>Profile</h1>
-          <button onClick={() => setEditing(true)} type="button">
+      <main className="page-shell">
+        <div className="page-header">
+          <div>
+            <p className="eyebrow">Personal account</p>
+            <h1>Profile</h1>
+            <p>Review the details attached to your HAUZ account.</p>
+          </div>
+          <Button onClick={() => setEditing(true)} variant="secondary" type="button">
+            <Pencil aria-hidden="true" size={17} />
             Edit profile
-          </button>
+          </Button>
         </div>
-        <dl className="profile-details">
-          <dt>Name</dt>
-          <dd>{`${account.firstName} ${account.lastName}`}</dd>
-          <dt>Role</dt>
-          <dd>{account.role === 'property_owner' ? 'Property Owner' : 'Realtor'}</dd>
-          <dt>Contact email</dt>
-          <dd>{account.contactEmail ?? 'Not provided'}</dd>
-          <dt>Bio</dt>
-          <dd className="profile-bio">{account.bio ?? 'Not provided'}</dd>
-        </dl>
+        <section className="profile-panel">
+          <div className="profile-identity">
+            <div className="avatar" aria-hidden="true">{initials.toUpperCase()}</div>
+            <div>
+              <h2>{`${account.firstName} ${account.lastName}`}</h2>
+              <p>{account.role === 'property_owner' ? 'Property Owner' : 'Realtor'}</p>
+            </div>
+          </div>
+          <dl className="profile-details">
+            <div>
+              <dt><UserRound aria-hidden="true" size={18} />Name</dt>
+              <dd>{`${account.firstName} ${account.lastName}`}</dd>
+            </div>
+            <div>
+              <dt><BriefcaseBusiness aria-hidden="true" size={18} />Role</dt>
+              <dd>{account.role === 'property_owner' ? 'Property Owner' : 'Realtor'}</dd>
+            </div>
+            <div>
+              <dt><AtSign aria-hidden="true" size={18} />Contact email</dt>
+              <dd>{account.contactEmail ?? 'Not provided'}</dd>
+            </div>
+            <div className="profile-detail-wide">
+              <dt><FileText aria-hidden="true" size={18} />Bio</dt>
+              <dd className="profile-bio">{account.bio ?? 'Not provided'}</dd>
+            </div>
+          </dl>
+        </section>
       </main>
     )
   }
 
   return (
-    <main>
-      <h1>Edit profile</h1>
-      <form onSubmit={handleSubmit}>
-        <label htmlFor="firstName">First name</label>
-        <input
-          autoComplete="given-name"
-          id="firstName"
-          maxLength={100}
-          onChange={(event) => setFirstName(event.target.value)}
-          required
-          value={firstName}
-        />
-        <label htmlFor="lastName">Last name</label>
-        <input
-          autoComplete="family-name"
-          id="lastName"
-          maxLength={100}
-          onChange={(event) => setLastName(event.target.value)}
-          required
-          value={lastName}
-        />
-        <label htmlFor="role">Role</label>
-        <input
-          disabled
-          id="role"
-          value={
-            account.role === 'property_owner' ? 'Property Owner' : 'Realtor'
-          }
-        />
-        <label htmlFor="contactEmail">Contact email</label>
-        <input
-          autoComplete="email"
-          id="contactEmail"
-          maxLength={254}
-          onChange={(event) => setContactEmail(event.target.value)}
-          type="email"
-          value={contactEmail}
-        />
-        <label htmlFor="bio">Bio</label>
-        <textarea
-          id="bio"
-          maxLength={2000}
-          onChange={(event) => setBio(event.target.value)}
-          rows={6}
-          value={bio}
-        />
+    <main className="page-shell page-shell-narrow">
+      <div className="page-header">
+        <div>
+          <p className="eyebrow">Personal account</p>
+          <h1>Edit profile</h1>
+          <p>Changes are saved securely through your account Function.</p>
+        </div>
+      </div>
+      <form className="profile-form" onSubmit={handleSubmit}>
+        <div className="field-row">
+          <Field label="First name" name="firstName">
+            <Input autoComplete="given-name" id="firstName" maxLength={100} onChange={(event) => setFirstName(event.target.value)} required value={firstName} />
+          </Field>
+          <Field label="Last name" name="lastName">
+            <Input autoComplete="family-name" id="lastName" maxLength={100} onChange={(event) => setLastName(event.target.value)} required value={lastName} />
+          </Field>
+        </div>
+        <Field hint="Role is fixed after onboarding." label="Role" name="role">
+          <Input disabled id="role" value={account.role === 'property_owner' ? 'Property Owner' : 'Realtor'} />
+        </Field>
+        <Field hint="Optional" label="Contact email" name="contactEmail">
+          <Input autoComplete="email" id="contactEmail" maxLength={254} onChange={(event) => setContactEmail(event.target.value)} type="email" value={contactEmail} />
+        </Field>
+        <Field hint={`${bio.length}/2000 characters`} label="Bio" name="bio">
+          <Textarea id="bio" maxLength={2000} onChange={(event) => setBio(event.target.value)} rows={6} value={bio} />
+        </Field>
         <div className="form-actions">
-          <button disabled={pending} type="submit">
+          <Button disabled={pending} type="submit">
+            {pending ? <LoaderCircle className="spin" aria-hidden="true" size={18} /> : <Save aria-hidden="true" size={18} />}
             {pending ? 'Saving...' : 'Save changes'}
-          </button>
-          <button disabled={pending} onClick={cancelEditing} type="button">
+          </Button>
+          <Button disabled={pending} onClick={cancelEditing} type="button" variant="secondary">
             Cancel
-          </button>
+          </Button>
         </div>
       </form>
       <AuthFeedback error={error} />

@@ -1,8 +1,12 @@
 import { createFileRoute, redirect, useRouter } from '@tanstack/react-router'
+import { ArrowLeft, ArrowRight, LoaderCircle, Mail, RotateCcw } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 
 import { AuthFeedback } from '../components/auth-feedback'
+import { Button } from '../components/ui/button'
+import { Field } from '../components/ui/field'
+import { Input } from '../components/ui/input'
 import { requestEmailOtp, verifyEmailOtp } from '../lib/auth/actions'
 import { normalizeReturnPath } from '../lib/auth/redirect'
 import type { AuthError } from '../lib/auth/types'
@@ -146,67 +150,88 @@ function SignIn() {
   }
 
   return (
-    <main>
-      <h1>Sign in</h1>
+    <main className="auth-page">
+      <section className="form-panel">
+        <div className="panel-icon" aria-hidden="true">
+          <Mail size={22} />
+        </div>
+        <p className="eyebrow">Secure access</p>
+        <h1>{codeSent ? 'Check your inbox' : 'Sign in to HAUZ'}</h1>
+        <p className="panel-copy">
+          {codeSent
+            ? 'Use the one-time code in the email we sent you.'
+            : 'We will email you a one-time code. No password needed.'}
+        </p>
       {!codeSent ? (
-        <form onSubmit={handleEmailSubmit}>
-          <label htmlFor="email">Email address</label>
-          <input
-            autoComplete="email"
-            id="email"
-            maxLength={254}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-            type="email"
-            value={email}
-          />
-          <button disabled={pending} type="submit">
+        <form className="stack-form" onSubmit={handleEmailSubmit}>
+          <Field label="Email address" name="email">
+            <Input
+              autoComplete="email"
+              id="email"
+              maxLength={254}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="you@example.com"
+              required
+              type="email"
+              value={email}
+            />
+          </Field>
+          <Button className="button-full" disabled={pending} type="submit">
+            {pending ? <LoaderCircle className="spin" aria-hidden="true" size={18} /> : <Mail aria-hidden="true" size={18} />}
             {pending ? 'Sending...' : 'Email me a code'}
-          </button>
+          </Button>
         </form>
       ) : (
-        <form onSubmit={handleCodeSubmit}>
-          <p>
-            Enter the code sent to <strong>{email}</strong>.
-          </p>
-          <label htmlFor="code">Email code</label>
-          <input
-            autoComplete="one-time-code"
-            id="code"
-            inputMode="numeric"
-            maxLength={128}
-            onChange={(event) => setCode(event.target.value)}
-            required
-            value={code}
-          />
-          <button disabled={pending} type="submit">
+        <form className="stack-form" onSubmit={handleCodeSubmit}>
+          <p className="email-chip">Sent to <strong>{email}</strong></p>
+          <Field label="Email code" name="code">
+            <Input
+              autoComplete="one-time-code"
+              className="code-input"
+              id="code"
+              inputMode="numeric"
+              maxLength={128}
+              onChange={(event) => setCode(event.target.value)}
+              required
+              value={code}
+            />
+          </Field>
+          <Button className="button-full" disabled={pending} type="submit">
+            {pending ? <LoaderCircle className="spin" aria-hidden="true" size={18} /> : <ArrowRight aria-hidden="true" size={18} />}
             {pending ? 'Verifying...' : 'Continue'}
-          </button>
+          </Button>
           <div className="secondary-actions">
-            <button
+            <Button
               disabled={pending || resendSeconds > 0}
               onClick={sendCode}
+              size="compact"
               type="button"
+              variant="ghost"
             >
+              <RotateCcw aria-hidden="true" size={16} />
               {resendSeconds > 0
                 ? `Resend in ${resendSeconds}s`
                 : 'Resend code'}
-            </button>
-            <button
+            </Button>
+            <Button
               disabled={pending}
               onClick={() => {
                 setCodeSent(false)
                 setCode('')
                 setError(null)
               }}
+              size="compact"
               type="button"
+              variant="ghost"
             >
+              <ArrowLeft aria-hidden="true" size={16} />
               Use another email
-            </button>
+            </Button>
           </div>
         </form>
       )}
       <AuthFeedback error={error} />
+      </section>
     </main>
   )
 }
