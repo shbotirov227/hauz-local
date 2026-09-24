@@ -149,6 +149,13 @@ export const requestEmailOtp = createServerFn({ method: 'POST' })
   > => {
     const csrfError = assertSameOriginMutation()
     if (csrfError) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[auth]', {
+          operation: 'request_email_otp',
+          status: 403,
+          code: csrfError.code,
+        })
+      }
       return csrfError
     }
 

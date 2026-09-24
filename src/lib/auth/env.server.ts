@@ -8,10 +8,17 @@ type ServerEnv = {
   nodeEnv: string
 }
 
+export class ServerConfigurationError extends Error {
+  constructor(name: string) {
+    super(`Missing required environment variable: ${name}`)
+    this.name = 'ServerConfigurationError'
+  }
+}
+
 function readRequiredEnv(name: string): string {
   const value = process.env[name]?.trim()
   if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`)
+    throw new ServerConfigurationError(name)
   }
 
   return value

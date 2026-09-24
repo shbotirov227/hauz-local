@@ -14,8 +14,13 @@ import {
   type PersonalAccountMethod,
   type PersonalAccountPatchInput,
 } from './function-client'
-import { getServerEnv } from './env.server'
+import { getServerEnv, ServerConfigurationError } from './env.server'
 import type { AuthError, AuthResult, CurrentUser, PersonalAccount } from './types'
+
+type AppwriteErrorOptions = {
+  operation: string
+  invalidSessionOnUnauthorized?: boolean
+}
 
 function baseClient(): Client {
   const env = getServerEnv()
@@ -43,19 +48,66 @@ function toCurrentUser(user: Models.User<Models.Preferences>): CurrentUser {
 export function mapAppwriteError(
   error: unknown,
   message = 'Appwrite rejected the request.',
+  options: AppwriteErrorOptions = { operation: 'appwrite_request' },
 ): AuthError {
-  if (error instanceof AppwriteException) {
+  const diagnostic =
+    error instanceof AppwriteException
+      ? { status: error.code, code: error.type || 'unknown' }
+      : error instanceof ServerConfigurationError
+        ? { status: 0, code: 'server_configuration_missing' }
+        : { status: 0, code: 'non_appwrite_error' }
+
+  if (process.env.NODE_ENV === 'development') {
+    console.error('[appwrite]', { operation: options.operation, ...diagnostic })
+  }
+
+  if (error instanceof ServerConfigurationError) {
     return {
       ok: false,
-      code: error.code === 401 ? 'invalid_session' : 'appwrite_error',
-      message,
+      code: 'appwrite_error',
+      message:
+        'Email sign-in is not configured on this server. Add the required Appwrite settings to .env and restart the server.',
+    }
+  }
+
+  if (error instanceof AppwriteException) {
+    const invalidSession =
+      options.invalidSessionOnUnauthorized && error.code === 401
+
+    let safeMessage = message
+    if (options.operation === 'create_email_token') {
+      if (error.code === 400) {
+        safeMessage =
+          'Appwrite rejected the email address. Check it carefully and try again.'
+      } else if (error.code === 401 || error.code === 403) {
+        safeMessage =
+          'Email sign-in is not configured correctly. Check the Appwrite API key and its required scopes.'
+      } else if (error.code === 404) {
+        safeMessage =
+          'The configured Appwrite project could not be found. Check the endpoint and project ID.'
+      } else if (error.code === 429) {
+        safeMessage =
+          'Too many email code requests. Wait a moment before trying again.'
+      } else if (error.code >= 500) {
+        safeMessage =
+          'The email service is temporarily unavailable. Please try again.'
+      }
+    }
+
+    return {
+      ok: false,
+      code: invalidSession ? 'invalid_session' : 'appwrite_error',
+      message: safeMessage,
     }
   }
 
   return {
     ok: false,
     code: 'appwrite_error',
-    message,
+    message:
+      options.operation === 'create_email_token'
+        ? 'The authentication service could not be reached. Please try again.'
+        : message,
   }
 }
 
@@ -80,7 +132,9 @@ export async function createEmailOtp(email: string): Promise<
       phrase: token.phrase || null,
     }
   } catch (error) {
-    return mapAppwriteError(error, 'Unable to send an email code.')
+    return mapAppwriteError(error, 'Unable to send an email code.', {
+      operation: 'create_email_token',
+    })
   }
 }
 
@@ -105,7 +159,9 @@ export async function createSessionFromOtp(
       expire: session.expire,
     }
   } catch (error) {
-    return mapAppwriteError(error, 'Unable to verify that email code.')
+    return mapAppwriteError(error, 'Unable to verify that email code.', {
+      operation: 'create_session_from_otp',
+    })
   }
 }
 
@@ -116,7 +172,10 @@ export async function getCurrentUser(
     const user = await new Account(sessionClient(sessionSecret)).get()
     return { ok: true, user: toCurrentUser(user) }
   } catch (error) {
-    return mapAppwriteError(error, 'Unable to load the current user.')
+    return mapAppwriteError(error, 'Unable to load the current user.', {
+      operation: 'get_current_user',
+      invalidSessionOnUnauthorized: true,
+    })
   }
 }
 
@@ -125,10 +184,9 @@ async function executePersonalAccount(
   method: PersonalAccountMethod,
   body?: PersonalAccountCreateInput | PersonalAccountPatchInput,
 ): Promise<AuthResult<{ personalAccount: PersonalAccount }>> {
-  const env = getServerEnv()
-  const functions = new Functions(sessionClient(sessionSecret))
-
   try {
+    const env = getServerEnv()
+    const functions = new Functions(sessionClient(sessionSecret))
     const execution = await functions.createExecution({
       functionId: env.functionId,
       body: body ? JSON.stringify(body) : '',
@@ -144,7 +202,14 @@ async function executePersonalAccount(
       body: execution.responseBody,
     })
   } catch (error) {
-    return mapAppwriteError(error, 'Unable to execute the Personal Account Function.')
+    return mapAppwriteError(
+      error,
+      'Unable to execute the Personal Account Function.',
+      {
+        operation: 'execute_personal_account',
+        invalidSessionOnUnauthorized: true,
+      },
+    )
   }
 }
 
@@ -172,7 +237,10 @@ export async function deleteCurrentSession(sessionSecret: string): Promise<void>
       sessionId: 'current',
     })
   } catch (error) {
-    const mapped = mapAppwriteError(error)
+    const mapped = mapAppwriteError(error, 'Unable to delete the session.', {
+      operation: 'delete_current_session',
+      invalidSessionOnUnauthorized: true,
+    })
     if (mapped.code !== 'invalid_session') {
       throw error
     }
