@@ -44,6 +44,8 @@ h2 { font-size: 1rem; }
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
   width: min(100% - 3rem, 70rem);
   min-height: 4.25rem;
   margin: 0 auto;
@@ -69,7 +71,9 @@ h2 { font-size: 1rem; }
   background: var(--primary);
 }
 
-.account-nav { gap: 0.5rem; }
+.account-nav { gap: 0.5rem; min-width: 0; max-width: 100%; }
+.account-link span { min-width: 0; overflow-wrap: anywhere; }
+.account-link svg { flex-shrink: 0; }
 
 .account-link {
   gap: 0.45rem;
@@ -269,6 +273,8 @@ h2 { font-size: 1rem; }
 
 .page-shell-narrow { max-width: 44rem; }
 
+.profile-back-link { margin-bottom: 1rem; }
+
 .page-header {
   display: flex;
   align-items: flex-end;
@@ -297,6 +303,7 @@ h2 { font-size: 1rem; }
 }
 
 .profile-identity h2, .profile-identity p { margin-bottom: 0; }
+.profile-identity > div:last-child { min-width: 0; overflow-wrap: anywhere; }
 .profile-identity p { margin-top: 0.25rem; color: var(--muted); font-size: 0.9rem; }
 
 .avatar {
@@ -379,8 +386,7 @@ h2 { font-size: 1rem; }
 }
 
 @media (max-width: 31rem) {
-  .header-inner { min-height: 3.8rem; }
-  .account-link span, .account-label { display: none; }
+  .header-inner { min-height: 3.8rem; padding-block: 0.5rem; gap: 0.5rem; }
   .form-panel, .profile-form { padding: 1.25rem; }
   .auth-page { align-items: start; padding: 1.5rem 0; }
   .secondary-actions, .form-actions { align-items: stretch; flex-direction: column; }

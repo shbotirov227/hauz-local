@@ -1,5 +1,6 @@
-import { createFileRoute, redirect, useRouter } from '@tanstack/react-router'
+import { Link, createFileRoute, redirect, useRouter } from '@tanstack/react-router'
 import {
+  ArrowLeft,
   AtSign,
   BriefcaseBusiness,
   FileText,
@@ -13,7 +14,7 @@ import { useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 
 import { AuthFeedback } from '../components/auth-feedback'
-import { Button } from '../components/ui/button'
+import { Button, buttonVariants } from '../components/ui/button'
 import { Field } from '../components/ui/field'
 import { Input } from '../components/ui/input'
 import { Textarea } from '../components/ui/textarea'
@@ -43,6 +44,18 @@ export const Route = createFileRoute('/profile')({
   component: Profile,
 })
 
+function BackHomeLink() {
+  return (
+    <Link
+      className={`${buttonVariants({ variant: 'secondary', size: 'compact' })} profile-back-link`}
+      to="/"
+    >
+      <ArrowLeft aria-hidden="true" size={17} />
+      Back to home
+    </Link>
+  )
+}
+
 function Profile() {
   const { auth } = Route.useRouteContext()
   const router = useRouter()
@@ -50,6 +63,7 @@ function Profile() {
   if (auth.status === 'error') {
     return (
       <main className="page-shell">
+        <BackHomeLink />
         <div className="page-header">
           <div>
             <p className="eyebrow">Personal account</p>
@@ -142,6 +156,7 @@ function ProfileDetails({ account }: { account: PersonalAccount }) {
 
     return (
       <main className="page-shell">
+        <BackHomeLink />
         <div className="page-header">
           <div>
             <p className="eyebrow">Personal account</p>

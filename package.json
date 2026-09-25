@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "generate-routes": "tsr generate",
     "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test tests/*.test.mjs",
     "appwrite": "appwrite",
     "appwrite:push": "appwrite push table --all --force && appwrite push function --all --force"
   },

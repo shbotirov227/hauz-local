@@ -28,6 +28,12 @@ export function normalizeReturnPath(value: unknown): string {
       return FALLBACK_RETURN_PATH
     }
 
+    // Auth entry pages cannot be destinations of their own route guards.
+    const pathname = decodeURIComponent(parsed.pathname).replace(/\/+$/u, '')
+    if (pathname === '/sign-in' || pathname === '/onboarding') {
+      return FALLBACK_RETURN_PATH
+    }
+
     return `${parsed.pathname}${parsed.search}${parsed.hash}`
   } catch {
     return FALLBACK_RETURN_PATH
