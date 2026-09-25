@@ -1,120 +1,128 @@
-# HAUZ Personal Account
+# HAUZ frontend take-home starter
 
-A TanStack Start application for passwordless Appwrite authentication,
-onboarding and personal-account management. Authentication is rendered on the
-server, so the header is correct in the first HTML response after a hard
-refresh.
+A blank TanStack Start app plus the Appwrite Function you will call from it.
+Read `TASK.md` for what to build. This file is only about getting it running.
 
-## Architecture
+## What you need
 
-- TanStack Start loaders and server functions provide the SSR and browser/server
-  boundary.
-- Appwrite email OTP is created and verified only on the server.
-- The Appwrite session secret is stored in an `HttpOnly`, `SameSite=Lax`
-  cookie. It is also `Secure` in production.
-- Profile data is read and written only through the authenticated
-  `personal-account` Appwrite Function. The web application never accesses the
-  table directly.
-- `src/components/ui` contains reusable shadcn-style owned components. Variants
-  use `class-variance-authority`; icons use `lucide-react`.
+- Node 22 or newer
+- A free Appwrite Cloud account at https://cloud.appwrite.io
 
-## Requirements
+## Setup
 
-- Node.js 22 or newer
-- An Appwrite Cloud project
-- Appwrite CLI authentication for deployment
+Budget 20 minutes. If you get stuck for longer than that, email us instead of
+grinding on it. Setup friction is not what we are testing.
 
-## Appwrite Setup
+### 1. Install dependencies
 
-1. Create a new Appwrite project.
-2. Put its project ID and regional endpoint in `appwrite.config.json`.
-3. Authenticate and deploy the database, table and Function:
+```bash
+npm install
+```
+
+### 2. Create an Appwrite project
+
+In the Appwrite Console, create a new project. From **Overview**, copy the
+**Project ID** and the **API Endpoint**. The endpoint is region specific, for
+example `https://fra.cloud.appwrite.io/v1`.
+
+Put both into `appwrite.config.json`, replacing `REPLACE_WITH_YOUR_PROJECT_ID`
+and the `endpoint` if your region differs.
+
+### 3. Push the database, table and Function
 
 ```bash
 npx appwrite login
 npm run appwrite:push
 ```
 
-`appwrite push table` treats the config as the complete schema and can remove
-tables not present in the file. Run it only against a fresh/dedicated project.
+That creates the `main` database, the `personal_accounts` table with its unique
+index, and deploys the `personal-account` Function. The first deployment takes a
+minute or two while Appwrite builds it.
 
-Confirm that the `personal-account` Function has a ready deployment and its
-execute access is `users`.
+Confirm it worked: the Function should appear in the Console under **Functions**
+with a ready deployment, and its **Execute access** should be `users`.
 
-Create an Appwrite API key with these scopes:
+One warning about that command. `appwrite push table` treats
+`appwrite.config.json` as the full picture of your schema and deletes tables in
+the project that are not in it. On the fresh project you just made there is
+nothing to delete, so it is safe here. Do not run it against a project that has
+other tables in it.
+
+### 4. Create an API key
+
+Console, **Overview**, **Integrations**, **API keys**, **Create API key**.
+
+Give it these scopes:
 
 - `sessions.write`
 - `users.read`
 - `users.write`
 - `execution.write`
 
-## Environment
+Copy the secret once. You cannot read it again.
 
-Copy the example file:
+### 5. Fill in your environment
 
 ```bash
 cp .env.example .env
 ```
 
-Fill in all four values:
+Fill in `APPWRITE_ENDPOINT`, `APPWRITE_PROJECT_ID` and `APPWRITE_API_KEY`.
+`.env` is git-ignored. Do not commit it.
 
-```dotenv
-APPWRITE_ENDPOINT=https://fra.cloud.appwrite.io/v1
-APPWRITE_PROJECT_ID=
-APPWRITE_API_KEY=
-APPWRITE_FUNCTION_ID=personal-account
-```
-
-`.env` is ignored by Git. Never put an API key or session secret in a variable
-prefixed with `VITE_`, browser code, committed file or client-visible response.
-
-## Run Locally
+### 6. Run it
 
 ```bash
-npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+http://localhost:3000
 
-Useful commands:
+## What is in here
 
-```bash
-npm run typecheck
-npm run build
-npm run preview
-npm run generate-routes
+```
+src/                          the app you are building; it is empty on purpose
+  router.tsx                  router setup
+  routes/__root.tsx           the document shell
+  routes/index.tsx            placeholder home page
+functions/personal-account/   the Function, already written
+appwrite.config.json          database, table and Function definitions
 ```
 
-## Browser Test Sequence
+Other scripts:
 
-1. Open `/` signed out and confirm the header shows **Sign in**.
-2. Open `/profile`; confirm it redirects to `/sign-in?redirect=%2Fprofile`.
-3. Request an email code, enter it and confirm a new user reaches onboarding.
-4. Complete onboarding and confirm the final page is `/profile`.
-5. Double-click **Continue** while onboarding and confirm only one account exists.
-6. Edit first name, last name, contact email and bio; refresh and confirm they
-   persist.
-7. Clear contact email and bio, save, refresh and confirm both display as not
-   provided.
-8. Confirm role is visible but cannot be edited after onboarding.
-9. Hard-refresh signed in and confirm the first rendered header shows the first
-   name without flicker.
-10. Log out, hard-refresh and confirm the header shows **Sign in**.
-11. Sign in again and confirm the existing account skips onboarding.
-12. Try external redirect values such as `//example.com` and
-    `https://example.com`; confirm navigation falls back to `/`.
+```bash
+npm run build       production build
+npm run typecheck   tsc --noEmit
+npm run appwrite    the Appwrite CLI, scoped to this project's config
+```
 
-## Function Contract
+## The Function
 
-| Method | Body | Result |
+One Appwrite Function with three routes. It is deployed with **Execute access:
+users**, which means a signed-in Appwrite user can execute it and a guest
+cannot.
+
+| Route | Body | Result |
 |---|---|---|
-| `GET /personal-account` | none | `200`, or `404` when onboarding is needed |
-| `POST /personal-account` | `firstName`, `lastName`, `role` | `201`, idempotent `200`, or role-conflict `409` |
-| `PATCH /personal-account` | any editable profile fields | `200` with the updated account |
+| `GET /personal-account` | | `200` with the account, `404` if the caller has none |
+| `POST /personal-account` | `firstName`, `lastName`, `role` | `201` created, `200` if it already exists, `409` if it exists with a different role |
+| `PATCH /personal-account` | any of `firstName`, `lastName`, `contactEmail`, `bio` | `200` with the updated account |
 
-The Function derives ownership from Appwrite's authenticated execution context.
-The browser does not send a user ID as authorization. On PATCH, omitted optional
-fields are retained and explicit `null` clears `contactEmail` or `bio`.
+`role` is either `property_owner` or `realtor`.
 
-See `NOTES.md` for design decisions and production follow-ups.
+On `PATCH`, a field you leave out keeps its stored value and `null` clears it.
+Every route answers `401` when the execution has no signed-in Appwrite user.
+
+Errors come back as `{ "error": "<code>", "message": "...", "issues": [...] }`.
+Codes you may see: `unauthorized`, `not_found`, `invalid_request`,
+`personal_account_inconsistent`, `internal_error`.
+
+You can read the source under `functions/personal-account/src/`. You may change
+it if you need to, but say why in `NOTES.md`.
+
+## Email codes
+
+Appwrite Cloud sends the sign-in codes from its own mail server on the free
+plan. Check your spam folder. If nothing arrives after a few minutes, Cloud may
+be rate limiting you, so wait and retry rather than clicking send repeatedly.

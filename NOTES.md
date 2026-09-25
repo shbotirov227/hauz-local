@@ -8,7 +8,7 @@ on the server, which makes the account header correct in the first HTML response
 instead of fixing it after hydration.
 
 The Appwrite API key is used only by server code for OTP/session operations. The
-session secret is stored in a short-lived `HttpOnly`, `SameSite=Lax` cookie
+session secret is stored in an `HttpOnly`, `SameSite=Lax` cookie with Appwrite's expiry
 (`Secure` in production), so browser JavaScript cannot read either credential.
 Mutating server functions validate same-origin `Origin`/`Host` headers.
 
@@ -34,11 +34,20 @@ browser-provided ID is not trustworthy. I also clear the cookie only for a
 verified invalid/expired session; temporary Appwrite or Function failures remain
 retryable instead of silently logging the user out.
 
+I changed the supplied Function's unexpected-error logging. It previously logged
+the raw exception message or stack; Appwrite SDK errors can contain credentials
+or other sensitive details. The Function now records only a fixed, generic log
+message and still returns the same controlled 500 response.
+
+The PDF brief says to submit a private repository, but the interview instruction
+superseded that with a public-repository requirement. This submission follows the
+later interview instruction and keeps secrets out of Git history.
+
 ## Verification and next steps
 
-TypeScript and production SSR/client builds pass. The deployed project was used
-to exercise OTP sign-in and the primary pages; the complete repeatable regression
-sequence is in the README. Before production I would add automated unit and E2E
+The author previously exercised OTP sign-in and the primary pages on Appwrite.
+Local checks and the remaining live regression sequence are in `TESTING.md`;
+mocked tests do not prove Cloud integration. Before production I would add E2E
 coverage, distributed rate limiting for OTP requests, structured redacted
 observability, CSP/security headers, key rotation procedures and monitored email
 delivery. I would also test invalid-session and Function-outage scenarios against
